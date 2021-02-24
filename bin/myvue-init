@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+
+const inquirer = require('inquirer')
+const chalk = require('chalk')
+const exists = require('fs').existsSync
+const rm = require('rimraf').sync
+const program = require('commander')
+const path = require('path')
+const ora = require('ora')
+
+const logger = require('../lib/logger')
+const download = require('../lib/download')
+const generate = require('../lib/generator')
+
+const gitUrl = 'direct:https://github.com/xieminhui/myvue-page-template.git#main';
+const tmpSaveDes = './download-temp'
+
+program.usage('<project-name>')
+
+/**
+ * Help.
+ */
+
+function help () {
+  program.parse(process.argv);
+  if (program.args.length < 1) return program.help()
+}
+
+help()
+
+program.on('--help', () => {
+  console.log('  Examples:')
+  console.log()
+  console.log(chalk.gray('    #使用love-page-template生成脚手架'))
+  console.log('    $ vue init my-project')
+  console.log()
+})
+
+const tmp = 'download-temp';
+const rawName = program.args[0]
+const inPlace = !rawName || rawName === '.'
+const name = inPlace ? path.relative('../', process.cwd()) : rawName
+const to = path.resolve(rawName || '.')
+
+/**
+ * Padding.
+ */
+
+console.log()
+process.on('exit', () => {
+  console.log()
+})
+
+if (inPlace || exists(to)) {
+  inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'ok',
+      message: inPlace
+        ? 'Generate project in current directory?'
+        : 'Target directory exists. Continue?',
+    }
+  ]).then(answers => {
+    if (answers.ok) {
+      run();
+    }
+  })
+} else {
+  run()
+}
+
+
+function run () {
+  const spinner = ora('downloading template')
+  spinner.start();
+
+  // 保证模板是最新的
+  if (exists(tmp)) rm(tmp);
+  download(gitUrl, tmpSaveDes)
+    .then(target => {
+      spinner.stop();
+      generate(name, tmpSaveDes, to, err => {
+        if (err) logger.fatal(err);
+        rm(tmp);
+        console.log()
+        logger.success('Generated "%s".', name);
+      })
+    }).catch(err => {
+      if (err) logger.fatal('Failed to download repo ' + tmpSaveDes + ': ' + err.message.trim())
+    })
+}
