@@ -31,8 +31,8 @@ help()
 program.on('--help', () => {
   console.log('  Examples:')
   console.log()
-  console.log(chalk.gray('    #使用love-page-template生成脚手架'))
-  console.log('    $ vue init my-project')
+  console.log(chalk.gray('    #使用myvue-page-template生成脚手架'))
+  console.log('    $ myvue init my-project')
   console.log()
 })
 
