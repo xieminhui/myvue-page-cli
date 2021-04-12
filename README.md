@@ -1,2 +1,2 @@
-# love-page-cli
+# auto-page-cli
 
